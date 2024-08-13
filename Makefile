@@ -58,11 +58,13 @@ ENVTEST_K8S_VERSION = 1.28.0
 
 CRDDESC_OVERRIDE ?= :maxDescLen=0
 
+GOVER ?=
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
+ifeq (,$(shell go$(GOVER) env GOBIN))
+GOBIN=$(shell go$(GOVER) env GOPATH)/bin
 else
-GOBIN=$(shell go env GOBIN)
+GOBIN=$(shell go$(GOVER) env GOBIN)
 endif
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
@@ -141,26 +143,26 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
-	go fmt ./...
+	go$(GOVER) fmt ./...
 
 .PHONY: vet
 vet: gowork ## Run go vet against code.
-	go vet ./...
-	go vet ./apis/...
+	go$(GOVER) vet ./...
+	go$(GOVER) vet ./apis/...
 
 .PHONY: force-bump
 force-bump: ## Force bump after tagging
 	for dep in $$(cat go.mod | grep openstack-k8s-operators | grep -vE -- 'indirect|openstack-operator' | awk '{print $$1}'); do \
-		go get $$dep@main ; \
+		go$(GOVER) get $$dep@main ; \
 	done
 	for dep in $$(cat apis/go.mod | grep openstack-k8s-operators | grep -vE -- 'indirect|openstack-operator' | awk '{print $$1}'); do \
-		cd ./apis && go get $$dep@main && cd .. ; \
+		cd ./apis && go$(GOVER) get $$dep@main && cd .. ; \
 	done
 
 .PHONY: tidy
 tidy: ## Run go mod tidy on every mod file in the repo
-	go mod tidy
-	cd ./apis && go mod tidy
+	go$(GOVER) mod tidy
+	cd ./apis && go$(GOVER) mod tidy
 
 .PHONY: golangci-lint
 golangci-lint:
@@ -182,14 +184,14 @@ test-all: test golint golangci golangci-lint ## Run all tests.
 
 .PHONY: cover
 cover: test ## Run tests and display functional test coverage
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go tool cover -html=cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go$(GOVER) tool cover -html=cover.out
 
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
-	go build -o bin/csv-merger cmd/csv-merger/csv-merger.go
+	go$(GOVER) build -o bin/manager main.go
+	go$(GOVER) build -o bin/csv-merger cmd/csv-merger/csv-merger.go
 
 .PHONY: run
 run: export METRICS_PORT?=8080
@@ -198,7 +200,7 @@ run: export ENABLE_WEBHOOKS?=false
 run: manifests generate fmt vet ## Run a controller from your host.
 	/bin/bash hack/clean_local_webhook.sh
 	source hack/export_related_images.sh && \
-	go run ./main.go -metrics-bind-address ":$(METRICS_PORT)" -health-probe-bind-address ":$(HEALTH_PORT)"
+	go$(GOVER) run ./main.go -metrics-bind-address ":$(METRICS_PORT)" -health-probe-bind-address ":$(HEALTH_PORT)"
 
 .PHONY: docker-build
 docker-build:  ## Build docker image with the manager.
@@ -285,22 +287,22 @@ $(KUSTOMIZE): $(LOCALBIN)
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	GOBIN=$(LOCALBIN) go$(GOVER) install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: crd-to-markdown
 crd-to-markdown: $(CRD_MARKDOWN) ## Download crd-to-markdown locally if necessary.
 $(CRD_MARKDOWN): $(LOCALBIN)
-	test -s $(LOCALBIN)/crd-to-markdown || GOBIN=$(LOCALBIN) go install github.com/clamoriniere/crd-to-markdown@$(CRD_MARKDOWN_VERSION)
+	test -s $(LOCALBIN)/crd-to-markdown || GOBIN=$(LOCALBIN) go$(GOVER) install github.com/clamoriniere/crd-to-markdown@$(CRD_MARKDOWN_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@c7e1dc9b
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go$(GOVER) install sigs.k8s.io/controller-runtime/tools/setup-envtest@c7e1dc9b
 
 .PHONY: ginkgo
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
-	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo
+	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go$(GOVER) install github.com/onsi/ginkgo/v2/ginkgo
 
 .PHONY: kuttl-test
 kuttl-test: ## Run kuttl tests
@@ -320,7 +322,7 @@ ifeq (, $(shell which operator-sdk 2>/dev/null))
 	@{ \
 	set -e ;\
 	mkdir -p $(dir $(OPERATOR_SDK)) ;\
-	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	OS=$(shell go$(GOVER) env GOOS) && ARCH=$(shell go$(GOVER) env GOARCH) && \
 	curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$${OS}_$${ARCH} ;\
 	chmod +x $(OPERATOR_SDK) ;\
 	}
@@ -353,7 +355,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	@{ \
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
-	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+	OS=$(shell go$(GOVER) env GOOS) && ARCH=$(shell go$(GOVER) env GOARCH) && \
 	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.29.0/$${OS}-$${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
@@ -438,15 +440,15 @@ golint: get-ci-tools
 
 .PHONY: gowork
 gowork: ## Generate go.work file to support our multi module repository
-	test -f go.work || go work init
-	go work use .
-	go work use ./apis
-	go work sync
+	test -f go.work || go$(GOVER) work init
+	go$(GOVER) work use .
+	go$(GOVER) work use ./apis
+	go$(GOVER) work sync
 
 .PHONY: operator-lint
 operator-lint: gowork ## Runs operator-lint
-	GOBIN=$(LOCALBIN) go install github.com/gibizer/operator-lint@v0.3.0
-	go vet -vettool=$(LOCALBIN)/operator-lint ./... ./apis/...
+	GOBIN=$(LOCALBIN) go$(GOVER) install github.com/gibizer/operator-lint@v0.3.0
+	go$(GOVER) vet -vettool=$(LOCALBIN)/operator-lint ./... ./apis/...
 
 # Used for webhook testing
 # Please ensure the openstack-controller-manager deployment and
@@ -464,7 +466,7 @@ run-with-webhook: export HEALTH_PORT?=8081
 run-with-webhook: manifests generate fmt vet ## Run a controller from your host.
 	/bin/bash hack/configure_local_webhook.sh
 	source hack/export_related_images.sh && \
-	go run ./main.go -metrics-bind-address ":$(METRICS_PORT)" -health-probe-bind-address ":$(HEALTH_PORT)"
+	go$(GOVER) run ./main.go -metrics-bind-address ":$(METRICS_PORT)" -health-probe-bind-address ":$(HEALTH_PORT)"
 
 .PHONY: webhook-cleanup
 webhook-cleanup:
