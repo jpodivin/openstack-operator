@@ -1,4 +1,7 @@
 # openstack-operator
+[![Docs](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/docs.yaml/badge.svg)](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/docs.yaml)
+[![Linters](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/lints.yaml/badge.svg)](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/lints.yaml)
+[![Image build](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/build-openstack-operator.yaml/badge.svg)](https://github.com/openstack-k8s-operators/openstack-operator/actions/workflows/build-openstack-operator.yaml)
 
 This is the primary operator for OpenStack. It is a "meta" operator, meaning it
 serves to coordinate the other operators for OpenStack by watching and configuring
