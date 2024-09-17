@@ -115,19 +115,6 @@ func (r *OpenStackControlPlane) ValidateCreate() (admission.Warnings, error) {
 			},
 		)
 	}
-	if len(ctlplaneList.Items) >= 1 {
-		return nil, apierrors.NewForbidden(
-			schema.GroupResource{
-				Group:    GroupVersion.WithKind("OpenStackControlPlane").Group,
-				Resource: GroupVersion.WithKind("OpenStackControlPlane").Kind,
-			}, r.GetName(), &field.Error{
-				Type:     field.ErrorTypeForbidden,
-				Field:    "",
-				BadValue: r.Name,
-				Detail:   "Only one OpenStackControlPlane instance per namespace is supported at this time.",
-			},
-		)
-	}
 
 	allWarn, allErrs = r.ValidateCreateServices(basePath)
 	if len(allErrs) != 0 {
